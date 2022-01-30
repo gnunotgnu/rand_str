@@ -10,26 +10,31 @@
 #include <ctime>
 #include <vector>
 
-std::string create_random_string(const size_t &len) {
-	static std::vector<std::string>history{"", "q"};
-//restart:
-	const std::string alphabet{"qwertyuiopasdfghjklzxcvbnm"};
-	const std::string alphabet_set_2{"QWERTYUIOPASDFGHJKLZXCVBNM"};
-	const std::string alphabet_set_3{"1234567890"};
-	std::vector<char> letters;
+//void writeln(const std::string text_line);
 
-	for (const auto& ch:alphabet) {
-		letters.push_back(ch);
-	}
+void add_to_letters(std::vector<char> &v, const std::string &chars_set) {
+    for (const auto& ch:chars_set) {
+        v.push_back(ch);      
+    }
+    
+}
 
-	for (const auto& ch:alphabet_set_2) {
-		letters.push_back(ch);
-	}
+std::vector<char> &set_compile() {
+    static std::vector<char> letters;
+    if (letters.size()) return letters;
 
-	for (const auto& ch:alphabet_set_3) {
-		letters.push_back(ch);
-	}
+	add_to_letters(letters, "qwertyuiopasdfghjklzxcvbnm");
+    add_to_letters(letters, "QWERTYUIOPASDFGHJKLZXCVBNM");
+    add_to_letters(letters, "1234567890");
+    //add_to_letters(letters, "-_+=");
+    //add_to_letters(letters, ".,;:");
+    return letters; //std::move(letters);    
+}
 
+
+std::string create_random_string(const size_t &len, std::vector<char> &letters) {
+	static std::vector<std::string>history{};
+    
 	std::mt19937 gen;
 	gen.seed(time(0));
 	
@@ -58,6 +63,11 @@ restart:
 	return random_string;
 }
 
+
+std::string create_random_string(const size_t &len) {
+    return create_random_string(len, set_compile());    
+}
+
 void writeln(std::tuple<int, std::string> t) {
 	auto& [n, msg] = t;
 	std::cout<< "(" << msg << " " << n << ")" << std::endl;
@@ -81,16 +91,51 @@ void test() {
 	
 }
 
+void check_argv(std::string arg_from_cmd) {            
+    for (const auto& ch:arg_from_cmd) {
+        if((ch <= 'z' && ch >= 'a') || (ch <= 'Z' && ch >= 'A')) {
+            throw std::runtime_error("ожидались число(а)");
+        }
+    }    
+    
+}
+
 int main(int argc, char** argv) {
-		if (argc == 2 && std::string(argv[1]) == "test") {
+    
+    if (argc == 2) {
+        std::string arg_from_cmd = std::string(argv[1]);
+        for (const auto& ch:arg_from_cmd) {
+             if(!((ch <= 'z' && ch >= 'a') || (ch <= 'Z' && ch >= 'A')))
+                 goto normal_run;
+        }
+    }
+    
+    if (argc == 2 && std::string(argv[1]) == "test") {
 		test();
 		return 0;
 	}
+
 	
+    if (argc == 2 && std::string(argv[1]).size() > 2) {
+        std::vector<char> v{};
+		add_to_letters(v, std::string(argv[1]));
+        std::cout << create_random_string(8, v) << std::endl;
+		return 0;
+	}
+	
+	
+normal_run:
 	if (argc == 1) {
 		std::cout << create_random_string(8) << std::endl;
 		return 0;
 	}
+	
+	if (argc == 2) {
+        check_argv(std::string(argv[1]));
+    }
+   	if (argc == 3) {
+        check_argv(std::string(argv[2]));
+    }
 
 	if (argc == 2 && std::stoi(std::string(argv[1])) > 0) {
 		int len = std::stoi(std::string(argv[1]));
