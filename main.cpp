@@ -4,14 +4,67 @@
 
 #include <memory>
 #include <iostream>
-#include <tuple>
+//#include <tuple>
 
 #include <random>
-//#include <ctime>
+#include <ctime>
 #include <vector>
 #include <sys/unistd.h>
+#include <forward_list>
+#include <cstdlib>
+#include <set>
 
-//void writeln(const std::string text_line);
+/*
+#include <fstream>
+
+void rename_file(char* fn) {
+    std::system("ls -l >test.txt"); // execute the UNIX command "ls -l >test.txt"
+    std::cout << std::ifstream("test.txt").rdbuf();
+}
+*/
+
+template<typename T>
+class Node {
+    T* p;
+    Node *l;
+    Node *r;
+public:
+    Node() {
+        p = nullptr;
+        l = nullptr;
+        r = nullptr;
+    }
+    ~Node() {
+        delete p;
+    }
+    void push(const T &s) {
+        if (p) {
+            p = new T(s);
+        }
+    }
+    void set_left(Node* ptr) {
+        l = ptr;
+    }
+
+    void set_right(Node* ptr) {
+        r = ptr;
+    }
+
+};
+
+void test() {
+    auto *ar = new Node<std::string>* [1000];
+    std::cout << "test\n";
+    for (int i =0; i < 100; i++) {
+        auto *n = new Node<std::string>();
+        n->push("fff");
+        ar[i] = n;
+
+    }
+
+
+
+}
 
 void add_to_letters(std::vector<char> &v, const std::string &chars_set) {
     for (const auto &ch: chars_set) {
@@ -29,40 +82,33 @@ std::vector<char> &set_compile() {
     add_to_letters(letters, "1234567890");
 //add_to_letters(letters, "-_+=");
 //add_to_letters(letters, ".,;:");
-    return letters; //std::move(letters);
+    return letters;
 }
 
-
 std::string create_random_string(const size_t &len, std::vector<char> &letters) {
-    static std::vector<std::string> history{};
-
+    static std::set<std::string> history;
     size_t v = getpid();
     std::mt19937 gen(v);
-    //gen.seed(time(0));
 
-    size_t restart_limit_counter = 100000;
+    int restart_limit_counter = 100000; //4294967295U;  //maximum number of attempts
 
-    restart:
     std::string random_string;
+    restart:
+    random_string.clear();
+
     for (size_t i = 0; i < len; i++) {
         size_t j = gen();
-        if (j < 0) j = -j;
         j %= letters.size();
-        char ch = letters.at(j);
-        random_string.push_back(ch);
+        random_string.push_back(letters[j]);
     }
 
 //check in history
-    for (auto &old: history) {
-        if (old == random_string) {
-//std::cout << "restart: " << old << " " << random_string << //'\n';
+    if (history.find(random_string) != history.end()) {
             if (restart_limit_counter-- <= 0)
-                throw std::runtime_error("Мало букв - много слов - коллизия!");
+                throw std::runtime_error("Few letters - many words - collision!");
             goto restart;
-        }
-
     }
-    history.push_back(random_string);
+    history.insert(random_string);
     return random_string;
 }
 
@@ -71,33 +117,10 @@ std::string create_random_string(const size_t &len) {
     return create_random_string(len, set_compile());
 }
 
-void writeln(const std::tuple<int, std::string>& t) {
-    auto&[n, msg] = t;
-    std::cout << "(" << msg << " " << n << ")" << std::endl;
-    if (n == 0)
-        throw std::runtime_error("Ooops!");
-}
-
-void writeln(const std::string& text_line) {
-    std::cout << text_line << std::endl;
-}
-
-void test() {
-
-    std::shared_ptr<int> p1(new int);
-    std::shared_ptr<int> p2;
-    p2 = p1;
-    if (p2) writeln("test()");
-    std::tuple<int, std::string> t{__LINE__, __FILE__};
-    writeln(t);
-//writeln(std::tuple<int, std::string>(0, "x"));
-
-}
-
 void check_argv(const std::string& arg_from_cmd) {
     for (const auto &ch: arg_from_cmd) {
         if ((ch <= 'z' && ch >= 'a') || (ch <= 'Z' && ch >= 'A')) {
-            throw std::runtime_error("ожидались число(а)");
+            throw std::runtime_error("expected number");
         }
     }
 
@@ -126,10 +149,9 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-
     normal_run:
     if (argc == 1) {
-        std::cout << create_random_string(8) << std::endl;
+        std::cout << create_random_string(int(time(nullptr))%8 + 3) <<  std::endl;
         return 0;
     }
 
@@ -145,13 +167,13 @@ int main(int argc, char **argv) {
         std::cout << create_random_string(len) << std::endl;
         return 0;
     }
-    if (argc == 3 && std::stoi(std::string(argv[1])) > 0 && std::stoi(std::string(argv[2])) > 0) {
+
+    if (argc == 3 && std::stoi(std::string(argv[1])) > 0 && std::stoull(std::string(argv[2])) > 0) {
         int len = std::stoi(std::string(argv[1]));
-        int count = std::stoi(std::string(argv[2]));
-        for (int i = 0; i < count; i++)
+        unsigned long long count = std::stoull(std::string(argv[2]));
+        for (unsigned long long i = 0; i < count; i++)
             std::cout << create_random_string(len) << std::endl;
         return 0;
     }
-
 
 }
